@@ -72,6 +72,8 @@ class kite(Structure):
     def evolve_system(self, attack_angle, bank_angle, integration_steps, step):
         self.update_coefficients(attack_angle, bank_angle)
         return libkite.simulate(pointer(self), integration_steps, step)
+    def evolve_system_2(self,integration_steps, step):
+        return libkite.simulate(pointer(self), integration_steps, step)
     def beta(self, continuous=False):
         if continuous:
             return libkite.getbeta(pointer(self))
@@ -94,6 +96,9 @@ class kite(Structure):
     def update_coefficients(self, attack_angle, bank_angle):
         self.C_l, self.C_d = coefficients[attack_angle,0], coefficients[attack_angle,1]
         self.psi = np.deg2rad(bank_angles[bank_angle])
+    def update_coefficients_cont(self, c_l,c_d, bank_angle):
+        self.C_l, self.C_d = c_l, c_d
+        self.psi = np.deg2rad(bank_angle)#[bank_angle])
     def fullyunrolled(self):
         return self.position.r>100
 
