@@ -12,51 +12,64 @@ make m1 #to compile on Apple silicon macs
 make parallel #to enable parallel loading of turbulent flow data (on x86 only)
 ```
 
-Learning can be performed by running the command:
-
-```
-python run.py
-```
-
-The specifications of the learning process are enforced by using input parameters:
-
-- `alg`: RL algorithm to be used, either `sarsa `or `dql`;
-- `path`: Path where to store learning outputs;
-- `wind`: Kind of wind pattern to use, either `const` or `lin` or `turbo`;
-- `episodes` and `duration`: Number of learning episodes and maximum duration of each episode (in seconds);
-- `lr` and `eps`: Initial learning rate and initial exploration rate;
-- `lrstart`and `epsstart`: learning step when to start learning rate and exploration rate decay;
-- `lrrate` and `epsrate`: exponents for the aforementioned decay, shaped as a power law.
-
 Constant and linear wind patterns are generated algorithmically on-the-go, while the turbulent flow data (~14GB) can be downloaded by typing the following command in the `env` folder:
 
 ```
 wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=15u4cvvwuiFLsNw6VlbYSLADoMQReszOn' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=15u4cvvwuiFLsNw6VlbYSLADoMQReszOn" -O flow.tgz && rm -rf /tmp/cookies.txt
 ```
 
-After successfully completing a learning process, one can evaluate the learned policy by running:
+Learning can be performed by running the command:
 
 ```
-python eval.py
+python3 main.py
 ```
 
-With similar parameters as the other script.
+Execution specifications:
 
-### Examples of learning results in the turbulent flow
+- `episodes`: number of training episodes;
+- `wind_type`: kind of wind pattern to use, either `const` or `lin` or `turbo`;
+- `step`: duration in time of each algorithmic iteration;
+- `critic_lr`: learning rate of the critic neural network;
+- `actor_lr`:  leatning rate of the actor neural network;
+- `save_dir`: main folder where results and weight of trained actor and critic are saved; 
+- `range_actions`: actions variation in each step, for instance --range_actions=2,1 means that the attack angle can vary only of 2 in each step, and the bank angle can vary only of 1 
 
-Example of a kite trajectory in the turbulent Couette flow:
+Suggested parameters for execution: 
 
+Constant Wind:
 ```
-python run.py --alg=sarsa --wind=turbo --episodes=50000 --eval_episodes=1000  --lr=0.1 --lrstart=1000000 --epsstart=1200000 --path=./results/turbo/
+python3 main.py --episodes=2000 --wind_type=const --step=0.1 --critic_lr=0.0001 --actor_lr=0.0001 
+```
+Linear Wind:
+```
+python3 main.py --episodes=2000 --wind_type=lin --step=0.2 --critic_lr=0.0001 --actor_lr=0.0001 
+```
+Turbulent Wind:
+```
+python3 main.py --episodes=2000 --wind_type=turbo --step=0.1 --critic_lr=0.001 --actor_lr=0.001 
 ```
 
-![](./results/turbo/animation.gif)
+After the learning preocess, a test is automatically performed; it can be perfored afeter using the execution specification: 
+
+- `wind_type`: same used in the training;
+- `step`: same value used in the training;
+- `save_dir`: main folder where the "net" folder is saved; 
+- `range_actions`:same value used in the training;
 
 
 
-Authors:
+
+
+
+
+
+kite Library and Interface Authors:
 
 - [Lorenzo Basile](https://github.com/lorenzobasile)
 - [Claudio Leone](https://github.com/LionClaude)
+
+TD3 Implementation:
+
+- [Maria Grazia Berni](https://github.com/mariagraziaberni)
 
 Project developed in the group of prof. Antonio Celani (QLS@ICTP, Trieste)
