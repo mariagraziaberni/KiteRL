@@ -93,7 +93,7 @@ def main(args):
     
     score_history = [] 
     
-    data_name= os.path.join(dir_name,"data_training") 
+    data_name= os.path.join(dir_name,"data_training.txt") 
                
     pict_name = os.path.join(dir_name,"average_reward.png") 
     
@@ -135,7 +135,7 @@ def main(args):
             
             k.update_coefficients_cont(c_l,c_d,new_bank)
             
-            sim_status = k.evolve_system_2(integration_steps_per_learning_step,integration_step)   #altra funzione di libreria che ho cambiato 
+            sim_status = k.evolve_system_2(integration_steps_per_learning_step,integration_step)  
             
             if not sim_status == 0: 
             

@@ -331,7 +331,7 @@ def test(args):
             
         else: 
         
-            xt= x[time_2[i-1]:time_2[i]]   #non azzerare piu time_2 
+            xt= x[time_2[i-1]:time_2[i]]   
             
             yt= y[time_2[i-1]:time_2[i]] 
             
