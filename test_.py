@@ -255,7 +255,7 @@ def test(args):
     
     plt.title("Trend of the delivered power in different episodes")
     
-    plt.xlabel('Time (sec)') 
+    plt.xlabel('Time (s)') 
     
     plt.ylabel('KW')
     
@@ -273,7 +273,7 @@ def test(args):
     
     plt.xlabel("Episode")
      
-    plt.ylabel("Time (sec) ")
+    plt.ylabel("Time (s) ")
     
     plt.savefig(file_name)
     

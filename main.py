@@ -7,7 +7,7 @@ import pandas as pd
 import scipy.interpolate as interpolate
 import matplotlib.pyplot as plt 
 from classes import *
-from test_2 import test 
+from test_ import test 
 
 ACTION_NOISE = 0.2
 ATTACK_INF_LIM = -5 
