@@ -89,7 +89,7 @@ def plot_trajectory(x,y,z,file_name):
             [0, z[-1]], color = 'black', linewidth = .5)
 
     ax.legend(fontsize=15, bbox_to_anchor=(0.89, 0.3, 0.5, 0.5))
-   # plt.close(fig)
+    plt.close(fig)
     ax.figure.savefig(file_name)
     
     
@@ -103,24 +103,24 @@ def plot_distance(x,y,z,time,file_name):
     lim = [0,lim_]
 
     ax1.set_xlim(lim)
-    ax1.set_xlabel('Time (sec)', fontsize=14)
-    ax1.set_ylabel('Kite x, meters', fontsize=14)
+    ax1.set_xlabel('time (s)', fontsize=14)
+    ax1.set_ylabel('Kite x, (m)', fontsize=14)
     ax1.plot(time,x)
 
     ax2.set_xlim(lim)
-    ax2.set_xlabel('Time, (sec)', fontsize=14)
-    ax2.set_ylabel('Kite y, meters', fontsize=14)
+    ax2.set_xlabel('time, (s)', fontsize=14)
+    ax2.set_ylabel('Kite y, (m)', fontsize=14)
     ax2.plot(time,y)
 
     ax3.set_xlim(lim)
-    ax3.set_xlabel('Time, (sec)', fontsize=14)
-    ax3.set_ylabel('Kite z, meters', fontsize=14)
+    ax3.set_xlabel('time, (s)', fontsize=14)
+    ax3.set_ylabel('Kite z, (m)', fontsize=14)
     ax3.plot(time,z)
 
     plt.tight_layout()
 
     #plt.show()
-    
+    #plt.close()
     plt.savefig(file_name)
     
     

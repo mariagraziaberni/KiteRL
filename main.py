@@ -1,13 +1,14 @@
+import numpy as np 
+import argparse 
 import os 
-import argparse
-import numpy as np
 import learning.pykite as pk 
 from utility import *
 import pandas as pd 
 import scipy.interpolate as interpolate
 import matplotlib.pyplot as plt 
-from classes import *
-from test_ import test 
+#from classes import *
+from classes_ import*
+from test import test 
 
 ACTION_NOISE = 0.2
 ATTACK_INF_LIM = -5 
@@ -18,10 +19,27 @@ BANK_SUP_LIM=3
 
 
 
+
+
 def main(args): 
 
+    if(args.range_actions) is not None: 
     
+        if(len(args.range_actions[0])>1): 
+        
+            range_actions = np.array([args.range_actions[0][0],args.range_actions[0][2]])
+            range_actions = range_actions.astype(np.float64)
+            
+        else: 
+        
+            range_actions=np.array([args.range_actions[0][0],args.range_actions[0][0]])
+            range_actions = range_actions.astype(np.float64)
+            
+    else: 
     
+        range_actions = np.array([1,1]) 
+        
+        
     Cl_angles = read_file('CL_angle.txt') 
     
     Cl_values = read_file('CL_value.txt') 
@@ -42,22 +60,6 @@ def main(args):
     
     initial_velocity = pk.vect(0, 0, 0)
     
-    if(args.range_actions) is not None: 
-    
-        if(len(args.range_actions)>1): 
-        
-            range_actions= np.array(args.range_actions[:2])
-            
-        else: 
-        
-            range_actions=args.range_actions[0] 
-            
-    else: 
-    
-        range_actions = None 
-        
-            
-            
     
     k = pk.kite(initial_position, initial_velocity,args.wind_type)
     
@@ -68,8 +70,6 @@ def main(args):
     a_lr = args.actor_lr
     
     step= args.step 
-    
-    
     
     integration_step = 0.001 
     
@@ -97,10 +97,12 @@ def main(args):
                
     pict_name = os.path.join(dir_name,"average_reward.png") 
     
-    agent =Agent(3,2,critic_lr=c_lr,actor_lr=a_lr,gamma=0.99,chkpt_dir=dir_nets, max_action =range_actions)
-   
+    agent =Agent(3,2,critic_lr=c_lr,actor_lr=a_lr,gamma=0.99,chkpt_dir=dir_nets)
+    
+    agent.manual_initialization()
+    
     for i in range(EPISODES): 
-          
+    
         done = False 
         
         score = 0 
@@ -119,13 +121,17 @@ def main(args):
         
         state = np.asarray(S_t) 
         
+        count = 0
+        
         while not done: 
         
-            action = agent.choose_action(state, ACTION_NOISE)
+            count +=1 
             
-            new_attack, new_bank = state[0]+action[0], state[1]+action[1] 
+            action = agent.choose_action(state,ACTION_NOISE)
             
-            new_attack = np.clip(new_attack,ATTACK_INF_LIM,ATTACK_SUP_LIM)  
+            new_attack, new_bank = state[0]+action[0]*range_actions[0], state[1]+action[1]*range_actions[1]
+            
+            new_attack = np.clip(new_attack,ATTACK_INF_LIM,ATTACK_SUP_LIM) 
             
             new_bank = np.clip(new_bank,BANK_INF_LIM,BANK_SUP_LIM)
             
@@ -135,11 +141,11 @@ def main(args):
             
             k.update_coefficients_cont(c_l,c_d,new_bank)
             
-            sim_status = k.evolve_system_2(integration_steps_per_learning_step,integration_step)  
+            sim_status = k.evolve_system_2(integration_steps_per_learning_step,integration_step)
             
             if not sim_status == 0: 
             
-                reward = 0.1 
+                reward = -0.1 
                 
                 done = True 
                 
@@ -151,15 +157,15 @@ def main(args):
                 
                 reward = k.reward(step) 
                 
-            if (i==int(horizon) -1 or k.fullyunrolled()): 
-                       
+            if (count==int(horizon) -1 or k.fullyunrolled()): 
+            
                 done = True 
                 
             agent.store_transition(state, action, reward, new_state, done) 
             
             agent.train() 
             
-            score+=reward 
+            score += reward 
             
             state = new_state 
             
@@ -172,9 +178,10 @@ def main(args):
             best_score = avg_score 
                        
             agent.save_models() 
+            
+            
     
-     
-    x = [i+1 for i in range(EPISODES)]
+    x = [i+1 for i in range(EPISODES)]   
     
     plot_average_reward(x,score_history,pict_name) 
     
@@ -184,26 +191,12 @@ def main(args):
         
             f.write(str(score_history[i])+"\n") 
             
+            
     
+         
     
-    test(args)
+    test(args)    
         
-             
-                    
-            
-            
-            
-            
-            
-        
-            
-    
-        
-    
-    
-    
-    
-    
     
 if __name__ == "__main__": 
 
@@ -219,9 +212,9 @@ if __name__ == "__main__":
     
     parser.add_argument('--actor_lr',type = float, default = 0.001) 
     
-    parser.add_argument('--save_dir',default =  "results_td3/") 
+    parser.add_argument('--save_dir',default =  "dati_training/") 
     
-    #parser.add_argument('--test_episodes', type = int, default=500)
+    parser.add_argument('--test_episodes', type = int, default=500)
      
     parser.add_argument('--range_actions',action='append',default = None) 
     
@@ -230,5 +223,61 @@ if __name__ == "__main__":
     args = parser.parse_args() 
     
     main(args) 
+            
+            
+        
+                
+                
+            
+                
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+        
+            
+        
+        
+        
+        
+        
+        
+        
+        
     
     
+    
+    
+    
+    
+    
+    
+        
+        
+    
+        
+        
+
+    
+        
+
+
+
+    
+        
+        
+            
+        
+            
+    
+        

@@ -62,12 +62,8 @@ class ReplayBuffer():
         return states, actions, rewards, states_, dones 
         
         
-        
-        
-        
-        
-        
-        
+  
+  
 class CriticNetwork(nn.Module): 
         
     def __init__(self, input_dims, fc1_dims, fc2_dims, n_actions, name= None, chkpt_dir = "net_dir"): 
@@ -119,6 +115,27 @@ class CriticNetwork(nn.Module):
         
         return q1 
         
+    def init_weights(self): 
+        
+        f1 = 1 / np.sqrt(self.fc1.weight.data.size()[0])
+        
+        f2 = 1 / np.sqrt(self.fc2.weight.data.size()[0])
+        
+        f3 = 0.003
+        
+        T.nn.init.uniform_(self.fc1.weight.data, -f1, f1)
+        
+        T.nn.init.uniform_(self.fc1.bias.data, -f1, f1)
+        
+        T.nn.init.uniform_(self.fc2.weight.data, -f2, f2)
+
+        T.nn.init.uniform_(self.fc2.bias.data, -f2, f2)
+        
+        T.nn.init.uniform_(self.q1.weight.data, -f3, f3)
+        
+        T.nn.init.uniform_(self.q1.bias.data, -f3, f3)
+        
+        
     def save_checkpoint(self): 
         
         if self.name is not None:
@@ -136,7 +153,9 @@ class CriticNetwork(nn.Module):
         
             self.load_state_dict(T.load(self.checkpoint_file)) 
         
-
+        
+        
+    
 class ActorNetwork(nn.Module): 
         
     def __init__(self, input_dims, fc1_dims, fc2_dims, n_actions, name=None, chkpt_dir = "net_dir", max_action=None): 
@@ -175,8 +194,6 @@ class ActorNetwork(nn.Module):
         
         
         
-      
-        
     def forward(self, state): 
     
         prob = self.fc1(state)
@@ -198,6 +215,33 @@ class ActorNetwork(nn.Module):
         
         return mu
         
+    def init_weights(self): 
+        
+        f1 = 1 / np.sqrt(self.fc1.weight.data.size()[0])
+        
+        f2 = 1 / np.sqrt(self.fc2.weight.data.size()[0])
+        
+        #f_new = 1 / np.sqrt(self.new_layer.weight.data.size()[0])
+        
+        f3 = 0.003
+        
+        T.nn.init.uniform_(self.fc1.weight.data, -f1, f1)
+        
+        T.nn.init.uniform_(self.fc1.bias.data, -f1, f1)
+        
+        T.nn.init.uniform_(self.fc2.weight.data, -f2, f2)
+
+        T.nn.init.uniform_(self.fc2.bias.data, -f2, f2)
+        
+       # T.nn.init.uniform_(self.new_layer.weight.data, -f_new, f_new)
+
+        #T.nn.init.uniform_(self.new_layer.bias.data, -f_new, f_new)
+        
+        T.nn.init.uniform_(self.mu.weight.data, -f3, f3)
+        
+        T.nn.init.uniform_(self.mu.bias.data, -f3, f3)
+        
+        
     def save_checkpoint(self): 
     
         if self.name is not None:
@@ -214,28 +258,15 @@ class ActorNetwork(nn.Module):
             print("...loading...") 
         
             self.load_state_dict(T.load(self.checkpoint_file)) 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+            
+         
+         
 class Agent: 
     
     def __init__(self, input_dims, n_actions, critic_lr=0.0005, actor_lr = 0.0005, tau = 0.005, gamma = 0.99, update_actor_interval =2, warmup = 1000, 
-                 max_size=1000000, layer1_size= 400, layer2_size = 300, batch_size=100,noise = 0.2, chkpt_dir= "const_training_standards",device = None, max_action = None):
+                 max_size=1000000, layer1_size= 400, layer2_size = 300, batch_size=100,target_noise = 0.2, chkpt_dir= "const_training_standards",device = None, max_action = None):
+                 
+                 
         
         self.input_dims = input_dims 
         
@@ -263,24 +294,9 @@ class Agent:
             
             self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu') 
             
+        self.max_action = MAX_ACTION 
         
-            
-        if max_action is not None: 
-            if(hasattr(max_action, '__len__')):
-            
-                self.max_action = T.tensor(max_action,dtype=T.float).to(self.device)
-                print("debug rileva length")
-            
-            else: 
-             
-                self.max_action = max_action
-            
-        
-        else: 
-        
-            self.max_action =MAX_ACTION
-            
-        self.min_action = -self.max_action
+        self.min_action = -MAX_ACTION
         
         self.update_actor_iter = update_actor_interval
         
@@ -303,71 +319,69 @@ class Agent:
         self.critic_2_optimizer = optim.Adam(self.critic_2.parameters(),lr = critic_lr) 
         
     
-        self.noise = noise 
-        #self.update_network_parameters(tau=1) 
+        self.target_noise = target_noise 
+        
+        self.update_network_parameters(tau=1) 
+        
+        self.min_value = 0
+        
+        self.max_value = 0
+        
+    def manual_initialization(self): 
+    
+        self.actor.init_weights()
+        
+        self.critic_1.init_weights()
+        
+        self.critic_2.init_weights()
+
+        self.update_network_parameters(tau=1) 
+    
+        
+    
+         
         
         
+
+
     def choose_action(self, observation, expl_noise, test=False): 
     
-        #if self.time_step < self.warmup: 
-        if (self.time_step < self.warmup and (not test)): 
+    
+        if (self.time_step < self.warmup and (not test)):
         
             mu = T.tensor(np.random.normal(loc = 0, scale = 0.5, size = (self.n_actions,)))
             
         else: 
-           
-            self.actor.eval()
         
+            self.actor.eval()
+            
             state = T.tensor(observation, dtype = T.float).to(self.device)
             
-            with T.no_grad():
+            with T.no_grad(): 
             
                 mu = self.actor.forward(state).to(self.device) 
+                
+            if (not test): 
             
-            #mu = mu +T.tensor(np.random.normal(scale = self.noise), dtype = T.float).to(self.device) 
-            
-            if(not test):
-                #nois = T.zeros_livke(
-                if(hasattr(self.max_action,'__len__')):
-                
-                    nois = T.zeros_like(self.max_action,dtype=T.float)
-                    
-                    nois += T.normal(0,self.max_action*expl_noise)
-                    
-                    nois.to(self.device)   #probabilemete manadarlo in gpu qui non è piu necessario, ma bisogna toglierlo anche agli altri 
-                    
-                    mu = mu +nois
-                    
-                else: 
                 
                 
-                    mu = mu +T.tensor(np.random.normal(0, self.max_action*expl_noise,size=self.n_actions), dtype = T.float).to(self.device) 
                 
+             
                     
-                    
-                    
-                #mu = mu +T.tensor(np.random.normal(0, self.max_action*expl_noise,size=self.n_actions), dtype = T.float).to(self.device) 
-        
-     
-        
-        if(hasattr(self.max_action, '__len__')):
-        
-            for i in range(len(self.max_action)):
-                mu[i] =T.clamp(mu[i] , self.min_action[i], self.max_action[i])
-        
-        else: 
-        
-            mu = T.clamp(mu, self.min_action, self.max_action)
+                mu = mu + T.tensor(np.random.normal(0, self.max_action*expl_noise,size=self.n_actions), dtype = T.float).to(self.device) 
+                
+                
+        action = T.clamp(mu, self.min_action, self.max_action) 
         
         self.time_step +=1 
         
-        return mu.cpu().detach().numpy()
-    
-    
-     
+        return action.cpu().detach().numpy() 
+        
+        
     def store_transition(self, state, action, reward, new_state, done): 
     
         self.memory.store_transition(state, action, reward, new_state, done) 
+        
         
     def train(self): 
         
@@ -394,42 +408,12 @@ class Agent:
         
         #noise = T.clamp(T.randn_like(action)*self.noise*self.max_action,0.2*self.min_action,0.2*self.max_action)   
         
-    
-        
-        if(hasattr(self.max_action, '__len__')):
-        
-            nois = T.randn_like(action)*self.noise*self.max_action
-            
-            noise = T.zeros_like(nois,dtype= T.float)
-            
-            for i in range(len(self.max_action)):
-            
-                noise[i] = T.clamp(noise[i],self.noise*self.min_action[i],self.noise*self.max_action[i])
-        
-        else: 
-        
-            noise = T.clamp(T.randn_like(action)*self.noise*self.max_action,self.noise*self.min_action,self.noise*self.max_action) 
-        
-        
-        
+        noise = T.clamp(T.randn_like(action)*self.target_noise*self.max_action,self.target_noise*self.min_action,self.target_noise*self.max_action) 
+
         target_actions_ = target_actions + noise
-        
-        #target_actions = T.clamp(target_actions, self.min_action, self.max_action) 
-        
-        if(hasattr(self.max_action, '__len__')):
-        
-            #noise = T.randn_like(action)*self.noise*self.max_action
-            
-            for i in range(len(self.max_action)):
-            
-                target_actions[i] = T.clamp(target_actions_[i],self.min_action[i],self.max_action[i])
-        
-        else: 
-        
-            target_actions = T.clamp(target_actions_, self.min_action, self.max_action) 
-        
-        
-        
+
+        target_actions = T.clamp(target_actions_, self.min_action, self.max_action)
+
         Q_tc1 = self.target_critic_1.forward(state_,target_actions) 
         
         Q_tc2 = self.target_critic_2.forward(state_,target_actions) 
@@ -487,7 +471,8 @@ class Agent:
         self.actor_optimizer.step() 
         
         self.update_network_parameters() 
-        
+
+
     def update_network_parameters(self, tau = None): 
     
         if tau is None: 
@@ -572,12 +557,29 @@ class Agent:
         
         self.target_critic_2.load_checkpoint()
         
-        
-        
-        
+    def load_actor(self): 
+    
+        self.actor.load_checkpoint()
     
         
         
         
+      
+   
+            
                 
+     
+        
+        
+        
+        
+        
+        
+        
+        
+                    
+        
+        
+        
+        
         
