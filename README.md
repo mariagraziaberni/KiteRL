@@ -32,6 +32,7 @@ Execution specifications:
 - `critic_lr`: learning rate of the critic neural network;
 - `actor_lr`:  leatning rate of the actor neural network;
 - `save_dir`: main folder where results and weight of trained actor and critic are saved; 
+- `test_episodes`: number of test episodes;
 - `range_actions`: actions variation in each step, for instance --range_actions=2,1 means that the attack angle can vary only of 2 in each step, and the bank angle can vary only of 1 
 
 Suggested parameters for execution: 
@@ -42,11 +43,11 @@ python3 main.py --episodes=2000 --wind_type=const --step=0.1 --critic_lr=0.0001 
 ```
 Linear Wind:
 ```
-python3 main.py --episodes=2000 --wind_type=lin --step=0.2 --critic_lr=0.0001 --actor_lr=0.0001 
+python3 main.py --episodes=2000 --wind_type=lin --step=0.1 --critic_lr=0.0007 --actor_lr=0.0007 
 ```
 Turbulent Wind:
 ```
-python3 main.py --episodes=2000 --wind_type=turbo --step=0.1 --critic_lr=0.001 --actor_lr=0.001 
+python3 main.py --episodes=2000 --wind_type=turbo --step=0.1 --critic_lr=0.0008 --actor_lr=0.0008 
 ```
 
 After the learning preocess, a test is automatically performed; it can be perfored afeter using the execution specification: 
@@ -54,7 +55,23 @@ After the learning preocess, a test is automatically performed; it can be perfor
 - `wind_type`: same used in the training;
 - `step`: same value used in the training;
 - `save_dir`: main folder where the "net" folder is saved; 
+- `test_episodes`: number of test episodes;
 - `range_actions`:same value used in the training;
+
+To use the pretrained models: 
+
+Linear Wind: 
+```
+python3 test.py --wind_type=lin --save_dir=trained_linear 
+
+```
+
+Turbulent Wind: 
+```
+python3 test.py --wind_type=turbo --save_dir=trained_turbo 
+
+```
+
 
 
 
